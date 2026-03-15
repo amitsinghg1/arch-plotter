@@ -1,0 +1,11 @@
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Typst temporary/compile files (if you don't want test PDFs uploaded)
+tests/*.pdf
