@@ -17,22 +17,13 @@ Whether you are drafting interior floor plans with dynamic walls and furniture, 
 
 To avoid namespace collisions between the interior drafting tools and the land surveying tools, **Arch-Plotter uses scoped imports.** Instead of importing everything globally, import the canvas wrapper from the main package, and then import the specific engine you need directly. This allows you to use shorthand commands like `R(10)` without typing prefixes!
 
-### Example 1: Interior Architecture (`Arch.typ`)
-Draft a floor plan and drop in some furniture.
+### Example 1: Entry point
 
 ```typst
-#import "@preview/arch-plotter:0.1.0/Arch.typ": *
+#import "@preview/arch-plotter:0.1.0": *
 
 #arch-canvas(scale: 0.5cm, {
   import cetz.draw: *
   
-  // 1. Trace the structural walls
-  let house = trace(start: (0,0), (
-    R(50), U(40), L(50), C()
-  ))
-  draw-walls(house)
-  
-  // 2. Add interior components
-  bed((15, 20), size: "queen", rotation: 90deg)
-  gas-burner((5, 35), scale: 1.2)
+  // Draw here
 })
