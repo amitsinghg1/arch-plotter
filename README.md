@@ -21,9 +21,6 @@ To avoid namespace collisions between the interior drafting tools and the land s
 Draft a floor plan and drop in some furniture.
 
 ```typst
-#import "@preview/cetz:0.4.2"
-#import "@preview/arch-plotter:0.1.0": arch-canvas
-// Import Arch tools directly to use shorthand commands
 #import "@preview/arch-plotter:0.1.0/Arch.typ": *
 
 #arch-canvas(scale: 0.5cm, {
