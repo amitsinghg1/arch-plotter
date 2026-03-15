@@ -5,7 +5,7 @@
 Whether you are drafting interior floor plans with dynamic walls and furniture, or generating legally accurate surveying documents with automatic area calculations and peg schedules, Arch-Plotter handles the complex geometry so you can focus on drafting.
 
 ## Features
-* **Two Distinct Engines:** A dedicated toolset for Architecture (buildings/interiors) and Plotting (land surveying/subdivisions).
+* **Two Distinct Engines:** A dedicated toolset for Architecture (buildings/interiors) and Plotting (arrive soon) (land surveying/subdivisions).
 * **Parametric Drafting:** Draw using standard CAD commands (`R`, `L`, `U`, `D`, `Mark`, `Jump`) without needing to calculate raw coordinates.
 * **Auto-Documentation:** Instantly generate Perimeter/Area schedules and X/Y Corner Coordinate tables directly from your drawings.
 * **Layer System:** Draw structural boundaries, dashed setbacks, and utility easements in a single pass.
