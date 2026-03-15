@@ -7,5 +7,4 @@
 ehthumbs.db
 Thumbs.db
 
-# Typst temporary/compile files (if you don't want test PDFs uploaded)
 tests/*.pdf
