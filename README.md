@@ -23,7 +23,6 @@ To avoid namespace collisions between the interior drafting tools and the land s
 #import "@preview/arch-plotter:0.1.0": *
 
 #arch-canvas(scale: 0.5cm, {
-  import cetz.draw: *
   
   // Draw here
 })
