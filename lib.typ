@@ -4,5 +4,7 @@
 
 #import "src/Arch.typ":*
 
+#import "src/Plotter.typ" as p
+
 #let arch-plotter-version = "0.1.0"
 
