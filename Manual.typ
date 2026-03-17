@@ -1,4 +1,4 @@
-#import "@preview/tidy:0.4.1"
+#import "@preview/tidy:0.4.3"
 
 #set page(paper: "a4", margin: 1in)
 #set text(font: "Linux Libertine", size: 16pt)
