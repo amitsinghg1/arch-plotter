@@ -12,7 +12,7 @@
   })
 }
 
-// --- BED (Organic/Soft Style) ---
+///BED (Organic/Soft Style)
 #let bed(pos, rotation: 0deg, scale: 1.0, size: "queen", fill: white) = {
   // Dimensions map
   let dims = (
@@ -113,8 +113,8 @@
   })
 }
 
-// --- 2. TOILET ---
-// anchors centered on the bounding box for easier rotation
+///TOILET
+//// anchors centered on the bounding box for easier rotation
 #let toilet(pos, rotation: 0deg, scale: 1.0) = {
   obj-wrapper(pos, rotation, {
     draw.scale(scale)
@@ -126,7 +126,7 @@
   })
 }
 
-// --- 3. WASHBASIN (Scaled) ---
+///WASHBASIN (Scaled) ---
 // type: "oval" (default) or "rect"
 #let washbasin(pos, rotation: 0deg, scale: 1.0, type: "oval") = {
   // Standard base dimensions (approx 60cm x 50cm)
@@ -165,7 +165,7 @@
   })
 }
 
-// --- 4. BATHTUB ---
+/// BATHTUB
 #let bathtub(pos, rotation: 0deg, length: 1.7, width: 0.8) = {
   obj-wrapper(pos, rotation, {
     // Outer rim
@@ -177,8 +177,8 @@
   })
 }
 
-// --- 5. SOFA ---
-// seats: number of cushions
+///SOFA, 
+/// seats: number of cushions
 #let sofa(pos, rotation: 0deg, width: 2.0, depth: 0.9, seats: 3) = {
   obj-wrapper(pos, rotation, {
     // Backrest
@@ -202,9 +202,9 @@
 }
 
 
-// --- 7. SKETCHY CAR (Matches your image style) ---
-// Added 'scale' parameter (default 1.0)
-#let sketchy-car(pos, rotation: 0deg, scale: 1.0, fill: white) = {
+///SKETCHY CAR
+///'scale' parameter (default 1.0)
+#let sketchy-car(pos, rotation: 0deg, scale: 1.0, fill: white, label: none) = {
   obj-wrapper(pos, rotation, {
     
     // --- SCALING LOGIC ---
@@ -282,20 +282,20 @@
       // 9. B-PILLAR
       draw.line((-0.4, roof-w), (-0.4, 0.95), stroke: 1.5pt)
       draw.line((-0.4, -roof-w), (-0.4, -0.95), stroke: 1.5pt)
-      draw.content((1.7,0), [#text(size: 0.8em)[_CAR_]])
+      draw.content((1.7,0), [#align(center)[#text(size: 0.8em)[#label]]])
     })
   })
 }
 
 
-// --- 9. PRO DINING TABLE (Scaled with Label) ---
+///PRO DINING TABLE (Scaled with Label)
 #let dining-table(
   pos, 
   rotation: 0deg, 
   scale: 1.0, 
   size: (2.0, 1.0), 
   chairs: 6,
-  label: none // New parameter for text
+  label: none //parameter for text
 ) = {
   obj-wrapper(pos, rotation, {
     draw.scale(scale) 
@@ -411,3 +411,37 @@
     draw-burner(0.18, 0.12, 0.1)
   })
 }
+
+// --- DEMO CANVAS ---
+#canvas({
+  import draw: *
+  
+  // 1. Bedroom Layout
+  // Bed: Positioned at (2, 2), rotated 90 degrees
+  bed((2, 2), rotation: 90deg, size: "king", scale: 1.2)
+  // Bedside tables (small squares using standard rect)
+
+  // 2. Bathroom Layout
+  // Bathtub at top right
+  bathtub((6, 3), rotation: 0deg, length: 2, width:1.5,)
+  // Toilet facing right, placed against left wall of bathroom area
+  toilet((4.5, 3), rotation: 0deg, scale:1.9)
+  // Washbasin
+  washbasin((6, 1), rotation: 90deg, type: "rect", scale: 2.2)
+
+  // 3. Living Room Layout
+  // Sofa facing 'up'
+  sofa((4, -2), rotation: 0deg, seats: 3, width: 2.2, )
+  // Coffee table (custom rect)
+  
+  // 4. Grid for reference (Optional)
+  grid((0, -4), (8, 4), step: 1, stroke: gray + 0.2pt)
+
+ // The new Sketchy Car (matches your image)
+  sketchy-car((6, 6), rotation: 0deg,)
+  
+  // You can rotate it easily too
+  sketchy-car((0, 6), rotation: 90deg, fill: gray.lighten(90%), scale: 1)
+
+ dining-table((0, 0), size: (2.2, 1.1), chairs: 8, scale: 1, rotation: 0deg)
+})
