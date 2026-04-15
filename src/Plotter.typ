@@ -3,7 +3,9 @@
 #import cetz.vector
 
 
-// A dedicated canvas for land surveying and property boundaries
+/// A dedicated canvas for land surveying and property boundaries
+/// - scale (length): The scale of the canvas.
+/// - body (any): The drawing code
 #let plot-canvas(scale: 0.5cm, body) = {
   cetz.canvas(length: scale, body)
 }
@@ -23,6 +25,8 @@
 // 1. UNIT & STRING FORMATTING
 // ==========================================
 
+/// Converts decimal value to a formatted string (feets and inches)
+/// - value (int): the value to be format as feets and inches string.
 #let to-arch-str(value) = {
   let total-inches = calc.round(value * 12 * 4) / 4
   let feet = calc.floor(total-inches / 12)
@@ -38,10 +42,11 @@
 // ==========================================
 // 
 
-// Switches the active drawing layer inside a trace
+///Switches the active drawing layer inside a trace
+/// - name (str): Name of the layer
 #let Layer(name) = (type: "layer", name: name)
 
-// Drop at Y direction till the intersecting point
+/// Drop at Y direction till the intersecting point
 #let DropY(p1, p2) = (type: "drop-y", p1: p1, p2: p2)
 // Drop at X direction till the intersecting point
 #let DropX(p1, p2) = (type: "drop-x", p1: p1, p2: p2)
@@ -496,6 +501,7 @@
   // 5. Return as a pure number instead of an 'angle' type
   final-angle / 1deg
 }
+
 
 
 #let draw-angle-mark(vertex, p1, p2, radius: 3, size: global-angle-size, color: red, flip: false, label-radius: auto) = {
