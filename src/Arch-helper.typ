@@ -23,7 +23,7 @@
 }
 
 
-/// 1. Parametric Line Segment Intersection
+///Parametric Line Segment Intersection
 #let intersect-segments(p1, p2, p3, p4) = {
   let (x1, y1) = p1; let (x2, y2) = p2
   let (x3, y3) = p3; let (x4, y4) = p4
@@ -126,7 +126,7 @@
   return valid-hits
 }
 
-/// 1.5 Point on Segment Detector (Catches T-Junctions)
+///Point on Segment Detector (Catches T-Junctions)
 #let point-on-segment(pt, p1, p2) = {
   let (px, py) = pt
   let (x1, y1) = p1; let (x2, y2) = p2
@@ -137,58 +137,142 @@
   return false
 }
 
-/// 2. Local Coordinate Transformer (With Auto-Melt)
-#let get-wall-corners(w, default-t) = {
+// ==========================================
+// INFINITE LINE INTERSECTION MATH
+// Calculates the exact mathematical point where two parallel offsets meet
+// ==========================================
+// ==========================================
+// THE CORNER ENGINE (NOW WITH SKEW CAPABILITIES)
+// ==========================================
+#let line-intersect(p1, p2, p3, p4) = {
+  let (x1, y1) = p1; let (x2, y2) = p2
+  let (x3, y3) = p3; let (x4, y4) = p4
+  let den = (x1 - x2) * (y3 - y4) - (y1 - y2) * (x3 - x4)
+  if calc.abs(den) < 0.0001 { return none } 
+  let t = ((x1 - x3) * (y3 - y4) - (y1 - y3) * (x3 - x4)) / den
+  return (x1 + t * (x2 - x1), y1 + t * (y2 - y1))
+}
+
+#let get-wall-corners(w, default-t, walls: ()) = {
   let t = w.at("thickness", default: default-t)
   let a = w.at("align", default: "center")
   let (x1, y1) = w.from; let (x2, y2) = w.to
   
-  // THE FIX: Automatically apply a microscopic 0.05 overlap to force joins!
-  let ext-s = w.at("ext-start", default: 0)
-  let ext-e = w.at("ext-end", default: 0)
+  let ext-s = w.at("ext-start", default: 0); let ext-e = w.at("ext-end", default: 0)
+  
+  // =====================================
+  // NEW SKEW MATH
+  // Evaluates skew-start and skew-end as angles or raw slope multipliers
+  // =====================================
+  let raw-ss = w.at("skew-start", default: 0)
+  let raw-se = w.at("skew-end", default: 0)
+  let ss = if type(raw-ss) == angle { calc.tan(raw-ss) } else { float(raw-ss) }
+  let se = if type(raw-se) == angle { calc.tan(raw-se) } else { float(raw-se) }
 
   let dx = x2 - x1; let dy = y2 - y1
   let len = calc.sqrt(dx*dx + dy*dy)
   if len == 0 { return () }
   let nx = dx / len; let ny = dy / len
   
-  let ex1 = x1 - nx * ext-s
-  let ey1 = y1 - ny * ext-s
-  let ex2 = x2 + nx * ext-e
-  let ey2 = y2 + ny * ext-e
+  let ex1 = x1 - nx * ext-s; let ey1 = y1 - ny * ext-s
+  let ex2 = x2 + nx * ext-e; let ey2 = y2 + ny * ext-e
+  let tl = if a == "left" { t } else if a == "right" { 0 } else { t / 2 }
+  let tr = if a == "left" { 0 } else if a == "right" { t } else { t / 2 }
   
-  let t-left = if a == "left" { t } else if a == "right" { 0 } else { t / 2 }
-  let t-right = if a == "left" { 0 } else if a == "right" { t } else { t / 2 }
+  // Applies the Skew Shift exactly along the normal plane
+  let l1 = (ex1 - ny*tl + nx*(tl*ss), ey1 + nx*tl + ny*(tl*ss))
+  let l2 = (ex2 - ny*tl + nx*(tl*se), ey2 + nx*tl + ny*(tl*se))
+  let r1 = (ex1 + ny*tr - nx*(tr*ss), ey1 - nx*tr - ny*(tr*ss))
+  let r2 = (ex2 + ny*tr - nx*(tr*se), ey2 - nx*tr - ny*(tr*se))
   
-  let c1 = (ex1 - ny*t-left, ey1 + nx*t-left)
-  let c2 = (ex2 - ny*t-left, ey2 + nx*t-left)
-  let c3 = (ex2 + ny*t-right, ey2 - nx*t-right)
-  let c4 = (ex1 + ny*t-right, ey1 - nx*t-right)
+  let c1 = l1; let c2 = l2; let c3 = r2; let c4 = r1
+  let EPS_SQ = 0.0001
+  let dist(pA, pB) = calc.pow(pA.at(0) - pB.at(0), 2) + calc.pow(pA.at(1) - pB.at(1), 2)
   
-  // Return the new coordinates
-  return (c1, c2, c3, c4, len + ext-s + ext-e, nx, ny, t-left, t-right, ex1, ey1)
+  let on-seg(p, a, b) = {
+    let cross = (b.at(0) - a.at(0)) * (p.at(1) - a.at(1)) - (b.at(1) - a.at(1)) * (p.at(0) - a.at(0))
+    if calc.abs(cross) > 0.05 { return false }
+    let dot = (p.at(0) - a.at(0)) * (b.at(0) - a.at(0)) + (p.at(1) - a.at(1)) * (b.at(1) - a.at(1))
+    if dot < -0.05 { return false }
+    let len2 = calc.pow(b.at(0) - a.at(0), 2) + calc.pow(b.at(1) - a.at(1), 2)
+    return dot <= len2 + 0.05
+  }
+
+  let l-int(p1, p2, p3, p4) = {
+    let den = (p1.at(0) - p2.at(0)) * (p3.at(1) - p4.at(1)) - (p1.at(1) - p2.at(1)) * (p3.at(0) - p4.at(0))
+    if calc.abs(den) < 0.0001 { return none }
+    let t = ((p1.at(0) - p3.at(0)) * (p3.at(1) - p4.at(1)) - (p1.at(1) - p3.at(1)) * (p3.at(0) - p4.at(0))) / den
+    return (p1.at(0) + t * (p2.at(0) - p1.at(0)), p1.at(1) + t * (p2.at(1) - p1.at(1)))
+  }
+
+  for other in walls {
+    if other == w or other.at("style", default: "wall") == "line" { continue }
+    let ot = other.at("thickness", default: default-t)
+    let oa = other.at("align", default: "center")
+    
+    let odx = other.to.at(0) - other.from.at(0); let ody = other.to.at(1) - other.from.at(1)
+    let olen = calc.sqrt(odx*odx + ody*ody)
+    if olen == 0 { continue }
+    
+    let onx = odx / olen; let ony = ody / olen
+    let otl = if oa == "left" { ot } else if oa == "right" { 0 } else { ot / 2 }
+    let otr = if oa == "left" { 0 } else if oa == "right" { ot } else { ot / 2 }
+    
+    let ol1 = (other.from.at(0) - ony*otl, other.from.at(1) + onx*otl); let ol2 = (other.to.at(0) - ony*otl, other.to.at(1) + onx*otl)
+    let or1 = (other.from.at(0) + ony*otr, other.from.at(1) - onx*otr); let or2 = (other.to.at(0) + ony*otr, other.to.at(1) - onx*otr)
+
+    let ms = false; let me = false
+    // ONLY miter if no manual extensions or skews are provided
+    if ext-s == 0 and raw-ss == 0 {
+      if dist(w.from, other.to) < EPS_SQ { 
+        let ptL = l-int(l1, l2, ol1, ol2); let ptR = l-int(r1, r2, or1, or2)
+        if ptL != none { c1 = ptL }; if ptR != none { c4 = ptR }; ms = true
+      } else if dist(w.from, other.from) < EPS_SQ {
+        let ptL = l-int(l1, l2, or1, or2); let ptR = l-int(r1, r2, ol1, ol2)
+        if ptL != none { c1 = ptL }; if ptR != none { c4 = ptR }; ms = true
+      }
+    }
+    if ext-e == 0 and raw-se == 0 {
+      if dist(w.to, other.from) < EPS_SQ { 
+        let ptL = l-int(l1, l2, ol1, ol2); let ptR = l-int(r1, r2, or1, or2)
+        if ptL != none { c2 = ptL }; if ptR != none { c3 = ptR }; me = true
+      } else if dist(w.to, other.to) < EPS_SQ {
+        let ptL = l-int(l1, l2, or1, or2); let ptR = l-int(r1, r2, ol1, ol2)
+        if ptL != none { c2 = ptL }; if ptR != none { c3 = ptR }; me = true
+      }
+    }
+    if ext-s == 0 and raw-ss == 0 and not ms and on-seg(w.from, other.from, other.to) {
+      let ptL = l-int(l1, l2, other.from, other.to); let ptR = l-int(r1, r2, other.from, other.to)
+      if ptL != none { c1 = ptL }; if ptR != none { c4 = ptR }
+    }
+    if ext-e == 0 and raw-se == 0 and not me and on-seg(w.to, other.from, other.to) {
+      let ptL = l-int(l1, l2, other.from, other.to); let ptR = l-int(r1, r2, other.from, other.to)
+      if ptL != none { c2 = ptL }; if ptR != none { c3 = ptR }
+    }
+  }
+  return (c1, c2, c3, c4)
 }
 
-/// 3. The "Inside Wall" Detector (Updated for Auto-Melt)
-#let is-inside-any-wall(pt, walls, default-t) = {
+// ==========================================
+// TRUE POLYGON INTERSECTION TEST
+// Uses cross products to perfectly detect points inside the mitered shapes
+// ==========================================
+#let is-inside-any-wall(pt, walls, default-t, all-walls: ()) = {
+  let cross(a, b, p) = (b.at(0) - a.at(0))*(p.at(1) - a.at(1)) - (b.at(1) - a.at(1))*(p.at(0) - a.at(0))
   let eps = 0.005 
+
   for w in walls {
     if w.at("style", default: "wall") == "line" { continue }
-    let data = get-wall-corners(w, default-t)
-    if data.len() == 0 { continue }
+    let data = get-wall-corners(w, default-t, walls: all-walls)
+    if data.len() < 4 { continue }
     
-    // Catch the new variables
-    let (c1, c2, c3, c4, ext-len, nx, ny, t-left, t-right, ex1, ey1) = data
+    let (c1, c2, c3, c4, ..rest) = data
+    let d1 = cross(c1, c2, pt); let d2 = cross(c2, c3, pt)
+    let d3 = cross(c3, c4, pt); let d4 = cross(c4, c1, pt)
     
-    // Shift using the extended starting point
-    let vx = pt.at(0) - ex1
-    let vy = pt.at(1) - ey1
-    let local-x = vx * nx + vy * ny
-    let local-y = -vx * ny + vy * nx 
-    
-    if local-x > eps and local-x < (ext-len - eps) and local-y > (-t-right + eps) and local-y < (t-left - eps) {
-      return true
-    }
+    let all-pos = d1 > eps and d2 > eps and d3 > eps and d4 > eps
+    let all-neg = d1 < -eps and d2 < -eps and d3 < -eps and d4 < -eps
+    if all-pos or all-neg { return true }
   }
   return false
 }
@@ -331,3 +415,5 @@
   
   return actual-r * sweep-rad
 }
+
+
