@@ -451,3 +451,213 @@ Extracts every single turning point from the main boundary layer and generates a
   style: custom-style, 
   show-outline: false
 )
+
+
+
+#pagebreak()
+
+
+
+
+#set page(paper: "a4", margin: 1in)
+#set text(font: "Linux Libertine", size: 16pt)
+#show raw: set text(font: ("Fira Code",))
+
+
+#let arch-docs = tidy.parse-module(read("../src/Plotter.typ"), old-syntax: true)
+
+// 2. CONVERT the locked module into a mutable dictionary
+#let custom-style = dictionary(tidy.styles.default)
+
+// 3. The exact CeTZ color palette (fully expanded)
+#let type-colors = (
+  // Measurements & Numbers (Light Purple)
+  "length":     rgb("#e7d9ff"),
+  "angle":      rgb("#e7d9ff"),
+  "number":     rgb("#e7d9ff"),
+  "float":      rgb("#e7d9ff"),
+  "int":        rgb("#e7d9ff"),
+  "integer":    rgb("#e7d9ff"),
+  "ratio":      rgb("#e7d9ff"),
+  
+  // Strings & Text (Mint Green)
+  "string":     rgb("#d1ffe2"),
+  "str":        rgb("#d1ffe2"),
+  
+  // Booleans (Light Yellow)
+  "bool":       rgb("#ffedc1"),
+  "boolean":    rgb("#ffedc1"),
+  
+  // Null / Auto (Light Peach/Red)
+  "none":       rgb("#ffcbc4"),
+  "auto":       rgb("#ffcbc4"),
+  
+  // Typst Content (Teal)
+  "content":    rgb("#a6ebe6"),
+  
+  // Data Structures (Light Orange)
+  "array":      rgb("#ffdfc4"),
+  "dictionary": rgb("#ffdfc4"),
+  
+  // Geometry & Math (Light Blue)
+  "coordinate": rgb("#c4e8ff"),
+  "vector":     rgb("#c4e8ff"),
+  
+  // Styling properties (Light Pink/Magenta)
+  "color":      rgb("#ffc4e8"),
+  "stroke":     rgb("#ffc4e8"),
+  
+  // Functions (Soft Pink/Purple)
+  "function":   rgb("#f9dfff"),
+  
+  // Default / Any (Light Grayish Blue)
+  "any":        rgb("#eff0f3"), 
+)
+
+// FOOLPROOF TYPE EXTRACTOR
+#let get-types(info) = {
+  let t = info.at("types", default: none)
+  if type(t) == array and t.len() > 0 { return t }
+  if type(t) == str and t != "" { return (t,) }
+  
+  let t2 = info.at("type", default: none)
+  if type(t2) == array and t2.len() > 0 { return t2 }
+  if type(t2) == str and t2 != "" { return (t2,) }
+  
+  return ("any",) 
+}
+
+#let my-show-type(type-name, style-args: none, ..kwargs) = {
+  let types = type-name.split(regex("[,|]")).map(t => t.trim())
+  
+  let boxes = types.map(name => {
+    box(
+      raw(name), 
+      inset: 2pt, baseline: 2pt, radius: 2pt,
+      fill: type-colors.at(name, default: type-colors.at("any")), 
+      stroke: none
+    )
+  })
+  
+  boxes.join(h(4pt))
+}
+
+#let my-show-signature(fn, style-args: none, ..kwargs) = {
+  let args-list = ()
+  for (name, info) in fn.args {
+    let t-array = get-types(info)
+    let t-str = my-show-type(t-array.join(" | "), style-args: style-args)
+    args-list.push([#h(1em)#raw(name + ":") #t-str])
+  }
+  
+  let return-str = if "return-types" in fn and fn.return-types != none {
+    [ #sym.arrow.r #my-show-type(fn.return-types.join(" | "), style-args: style-args) ]
+  } else { none }
+
+  block(spacing: 0.6em)[
+    #set par(leading: 0.35em)
+    #text(blue, raw(fn.name))#raw("(")
+    #if args-list.len() > 0 [
+      \ #args-list.join([,\ ]) \
+    ]
+    #raw(")") #return-str
+  ]
+}
+
+#let my-show-parameter-list(fn, style-args: none, ..kwargs) = {
+  if fn.args.len() == 0 { return none }
+  
+  block(spacing: 1.5em)[
+    #text(weight: "bold", size: 1.1em)[Parameters]
+    
+    #for (name, info) in fn.args [
+      #let t-array = get-types(info)
+      #let type-content = my-show-type(t-array.join(" | "), style-args: style-args)
+      
+      - *#raw(name)* #type-content \
+        #info.at("description", default: "")
+    ]
+  ]
+}
+
+#let my-show-routine(fn, style-args: none, ..kwargs) = {
+  let h-level = if type(style-args) == dictionary {
+    style-args.at("first-heading-level", default: 2)
+  } else { 2 }
+
+  heading(level: h-level, fn.name)
+  v(0.3em)
+  my-show-signature(fn, style-args: style-args)
+  v(1em)
+  
+  if fn.description != none [
+    #fn.description
+    #v(1em)
+  ]
+  
+  my-show-parameter-list(fn, style-args: style-args)
+  v(2em)
+}
+
+#{
+  custom-style.show-type = my-show-type
+  custom-style.show-signature = my-show-signature
+  custom-style.show-parameter-list = my-show-parameter-list
+  custom-style.show-routine = my-show-routine
+  custom-style.show-function = my-show-routine
+}
+
+#align(center)[
+  #text(size: 24pt, weight: "bold")[Arch-Plotter Reference Manual] \
+  #v(1em)
+  Auto-generated Documentation by using tidy library
+
+  Version 0.1.0
+]
+
+#v(2em)
+
+
+= Land Surveying Engine (Plotter module)
+
+The Plotter engine uses the exact same tracing logic as the Architecture engine, but is optimized for massive coordinates, angle properties, layer management, and CAD schedules.
+
+== trace-plot()
+Traces a property boundary. Uses the exact same movement commands (R, L, U, D, Mark, etc.) as trace-plots.
+
+Special Plotter Command:
+
+Layer("name"): Switches the active drawing layer. Any lines drawn after this command are visual only and are ignored by the Area and Perimeter calculators.
+
+== draw-plot()
+Renders the output of trace-plot with survey-specific visual data.
+
+Parameters:
+
+plot-data (dictionary): The data returned from trace-plot.
+
+name (string) - Default: "": The plot identifier (e.g., "Plot 12").
+
+show-dim (boolean) - Default: false: Automatically dimension every side of the boundary.
+
+show-area (boolean) - Default: false: Calculate and display the total area inside the boundary.
+
+show-angle (array) - Default: (false, false): (show-boolean, flip-boolean). Calculates and draws internal degrees for every corner.
+
+layer-styles (dictionary) - Default: (:): Defines the visual style for custom layers. E.g., ("Setbacks": (stroke: red, dash: "dashed")).
+
+== Automated CAD Schedules
+
+plot-summary-table(..plots):
+Takes one or more trace dictionaries (or an array of subdivisions) and generates a formatted Typst table showing the Plot Name, Perimeter, and Total Area.
+
+
+
+
+= Plotter (API)
+
+#tidy.show-module(
+  arch-docs,
+  style: custom-style, 
+  show-outline: false
+)
