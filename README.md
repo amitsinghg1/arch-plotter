@@ -57,7 +57,7 @@ To avoid namespace collisions between the interior drafting tools and the land s
 Use the continuous tracing engine to draw walls, and effortlessly drop parametric doors and windows into your design.
 
 ```typst
-#import "@local/arch-plotter:0.2.0": *
+#import "@preview/arch-plotter:0.2.0": *
 #set page(width: auto, height: auto, margin: 1.0cm,)
 
 #let t = true
