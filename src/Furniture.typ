@@ -1,6 +1,6 @@
 #set page(width: auto, height: auto, margin: 10pt)
 
-#import "@preview/cetz:0.4.2": canvas, draw
+#import "@preview/cetz:0.5.2": canvas, draw
 
 // --- HELPER WRAPPER ---
 // Handles the common logic of moving to a position and rotating
@@ -12,8 +12,25 @@
   })
 }
 
-///BED (Organic/Soft Style)
-#let bed(pos, rotation: 0deg, scale: 1.0, size: "queen", fill: white) = {
+/// BED (Organic/Soft Style with Natural Colors)
+#let bed(
+  pos, 
+  rotation: 0deg, 
+  scale: 1.0, 
+  size: "queen", 
+  filled: true, 
+  frame-color: rgb("#c19a6b"),    // Warm wood tone
+  mattress-color: rgb("#f4f4f0"), // Soft off-white
+  sheet-color: rgb("#d4e0eb"),    // Light slate blue/grey
+  pillow-color: rgb("#ffffff")    // Pure white
+) = {
+
+  // NEW: Dynamic color resolvers based on the 'filled' toggle
+  let f-frame = if filled { frame-color } else { none }
+  let f-mattress = if filled { mattress-color } else { none }
+  let f-sheet = if filled { sheet-color } else { none }
+  let f-pillow = if filled { pillow-color } else { none }
+
   // Dimensions map
   let dims = (
     single: (w: 0.9, l: 2.0),
@@ -27,23 +44,17 @@
   obj-wrapper(pos, rotation, {
     draw.scale(scale)
     
-    // 1. THE MAIN FRAME (Outer Box)
-    // Drawn with a slight radius so it's not "sharp"
+    // 1. THE MAIN FRAME (Outer Wood/Metal Box)
+    draw.rect((-w/1.9, -l/1.9), (w/1.9, l/1.6), stroke: 1pt, fill: f-frame, radius: 0.02)
 
-        draw.rect((-w/1.9, -l/1.9), (w/1.9, l/1.6), stroke: 1pt, fill: fill, radius: 0.02)
-
-    
-    draw.rect((-w/2, -l/2), (w/2, l/1.63), stroke: 1pt, fill: fill, radius: 0.02)
-
-
+    // 1b. THE MATTRESS (Inner Box)
+    draw.rect((-w/2, -l/2), (w/2, l/1.63), stroke: 1pt, fill: f-mattress, radius: 0.02)
 
     // 2. THE SHEET FOLD (The Wavy Band)
-    // This separates the pillows from the rest of the bed
     let fold-y = l/4 + 0.1
     let fold-h = 0.35
     
-    // We draw the "Fold" as a filled shape to cover the mattress lines
-    draw.merge-path(close: true, fill: fill, stroke: 0.8pt, {
+    draw.merge-path(close: true, fill: f-sheet, stroke: 0.8pt, {
         // Top Wavy Line
         draw.bezier(
             (-w/2, fold-y), (w/2, fold-y), 
@@ -61,30 +72,22 @@
     })
 
     // 3. THE PILLOWS (Soft & Organic)
-    // Instead of rectangles, we use curves to make them look like soft fabric
-    let p-h = 0.45 // Pillow Height
-    let p-y = fold-y + 0.05 + p-h/2 + 0.05 // Position
+    let p-h = 0.45 
+    let p-y = fold-y + 0.05 + p-h/2 + 0.05 
     
-    // Helper to draw a "Soft" Pillow
     let soft-pillow(x, y, pw) = {
        draw.group({
          draw.translate((x, y))
-         // We draw 4 bezier curves to make a "squarish circle"
-         // This removes the "sharp rectangle" look completely
          let h = p-h
          let w = pw
-         draw.merge-path(close: true, fill: fill, stroke: 0.5pt, {
-            // Top Edge (Curved down slightly)
+         draw.merge-path(close: true, fill: f-pillow, stroke: 0.5pt, {
             draw.bezier((-w/2, h/2), (w/2, h/2), (-w/4, h/2 - 0.02), (w/4, h/2 - 0.02))
-            // Right Edge (Curved out)
             draw.bezier((w/2, h/2), (w/2, -h/2), (w/2 + 0.02, h/4), (w/2 + 0.02, -h/4))
-            // Bottom Edge (Curved up)
             draw.bezier((w/2, -h/2), (-w/2, -h/2), (w/4, -h/2 + 0.02), (-w/4, -h/2 + 0.02))
-            // Left Edge (Curved out)
             draw.bezier((-w/2, -h/2), (-w/2, h/2), (-w/2 - 0.02, -h/4), (-w/2 - 0.02, h/4))
          })
          
-         // Optional: Tiny wrinkle line inside
+         // Tiny wrinkle line inside
          draw.bezier((-w/4, -h/4), (0, -h/4 + 0.05), (-w/8, -h/4 - 0.02), (-0.05, -h/4), stroke: 0.2pt)
        })
     }
@@ -96,20 +99,15 @@
        // Dual Pillows
        let p-gap = 0.05
        let p-w = (w / 2) - 0.15 - p-gap
-       
-       // Left Pillow
        soft-pillow(-p-w/2 - p-gap, p-y, p-w)
-       // Right Pillow
        soft-pillow(p-w/2 + p-gap, p-y, p-w)
     }
     
     // 4. INNER FRAME DETAIL (Optional)
-    // A thin line inside the bed frame (top half only) to show depth
-    // We stop it at the sheet fold so it doesn't cross over
     let gap = 0.08
-    draw.line((-w/2 + gap, l/2 - gap), (-w/2 + gap, fold-y + 0.05), stroke: 0.3pt) // Left inner
-    draw.line((w/2 - gap, l/2 - gap), (w/2 - gap, fold-y + 0.05), stroke: 0.3pt)   // Right inner
-    draw.line((-w/2 + gap, l/2 - gap), (w/2 - gap, l/2 - gap), stroke: 0.3pt)      // Top inner
+    draw.line((-w/2 + gap, l/2 - gap), (-w/2 + gap, fold-y + 0.05), stroke: 0.3pt) 
+    draw.line((w/2 - gap, l/2 - gap), (w/2 - gap, fold-y + 0.05), stroke: 0.3pt)   
+    draw.line((-w/2 + gap, l/2 - gap), (w/2 - gap, l/2 - gap), stroke: 0.3pt)      
   })
 }
 
@@ -288,15 +286,25 @@
 }
 
 
-///PRO DINING TABLE (Scaled with Label)
+///PRO DINING TABLE (Scaled with Label and Natural Colors)
 #let dining-table(
   pos, 
   rotation: 0deg, 
   scale: 1.0, 
   size: (2.0, 1.0), 
   chairs: 6,
-  label: none //parameter for text
+  label: none, // parameter for text
+  filled: true,
+  table-color: rgb("#a67c52"),   // Warm oak/wood for the main table
+  seat-color:  rgb("#f5f2eb"),   // Cream linen fabric for the chair cushions
+  frame-color: rgb("#6b4423")    // Dark walnut for the chair legs/frames
 ) = {
+
+  // Dynamic color resolvers based on the 'filled' toggle
+  let f-table = if filled { table-color } else { none }
+  let f-seat  = if filled { seat-color } else { none }
+  let f-frame = if filled { frame-color } else { none }
+
   obj-wrapper(pos, rotation, {
     draw.scale(scale) 
 
@@ -312,13 +320,19 @@
       draw.group({
         draw.translate((x, y))
         draw.rotate(r)
-        draw.rect((-cw/2 + 0.02, -cd/2), (cw/2 - 0.02, 0), fill: white, stroke: 0.5pt)
-        draw.merge-path(close: true, fill: white, stroke: 0.8pt, {
+        
+        // 1. Tucked-in portion (Chair frame/legs under table)
+        draw.rect((-cw/2 + 0.02, -cd/2), (cw/2 - 0.02, 0), fill: f-frame, stroke: 0.5pt)
+        
+        // 2. Visible Seat Cushion
+        draw.merge-path(close: true, fill: f-seat, stroke: 0.8pt, {
           draw.line((-cw/2, 0), (-cw/2, visible-depth)) 
           draw.bezier((-cw/2, visible-depth), (cw/2, visible-depth), (-cw/4, visible-depth + 0.1), (cw/4, visible-depth + 0.1))
           draw.line((cw/2, visible-depth), (cw/2, 0))    
           draw.line((cw/2, 0), (-cw/2, 0))               
         })
+        
+        // 3. Backrest and Arm details
         draw.bezier(
           (-cw/2 + rim, visible-depth - 0.02), 
           (cw/2 - rim, visible-depth - 0.02), 
@@ -351,12 +365,12 @@
     }
 
     // --- DRAW TABLE ---
-    draw.rect((-w/2, -d/2), (w/2, d/2), fill: white, stroke: 1pt)
+    // Drawn last so it covers the tucked-in frames when filled!
+    draw.rect((-w/2, -d/2), (w/2, d/2), fill: f-table, stroke: 1pt, radius:0.05)
 
     // --- DRAW LABEL (Centered) ---
     if label != none {
       draw.content((0, 0), {
-        // We wrap the text in a set text rule for styling
         set text(size: 10pt, font: "Linux Libertine", style: "italic")
         label
       })
@@ -411,3 +425,37 @@
     draw-burner(0.18, 0.12, 0.1)
   })
 }
+
+// --- DEMO CANVAS ---
+#canvas({
+  import draw: *
+  
+  // 1. Bedroom Layout
+  // Bed: Positioned at (2, 2), rotated 90 degrees
+  bed((2, 2), rotation: 90deg, size: "king", scale: 1.2)
+  // Bedside tables (small squares using standard rect)
+
+  // 2. Bathroom Layout
+  // Bathtub at top right
+  bathtub((6, 3), rotation: 0deg, length: 2, width:1.5,)
+  // Toilet facing right, placed against left wall of bathroom area
+  toilet((4.5, 3), rotation: 0deg, scale:1.9)
+  // Washbasin
+  washbasin((6, 1), rotation: 90deg, type: "rect", scale: 2.2)
+
+  // 3. Living Room Layout
+  // Sofa facing 'up'
+  sofa((4, -2), rotation: 0deg, seats: 3, width: 2.2, )
+  // Coffee table (custom rect)
+  
+  // 4. Grid for reference (Optional)
+  grid((0, -4), (8, 4), step: 1, stroke: gray + 0.2pt)
+
+ // The new Sketchy Car (matches your image)
+  sketchy-car((6, 6), rotation: 0deg,)
+  
+  // You can rotate it easily too
+  sketchy-car((0, 6), rotation: 90deg, fill: gray.lighten(90%), scale: 1)
+
+ dining-table((0, 0), size: (2.2, 1.1), chairs: 8, scale: 1, rotation: 0deg)
+})
