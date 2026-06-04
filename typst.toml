@@ -8,5 +8,5 @@ description = "A parametric 2D CAD and land surveying engine for architectural d
 repository = "https://github.com/amitsinghg1/arch-plotter"
 keywords = ["architecture", "cad", "cetz", "drafting", "surveying", "floor-plan"]
 categories = ["visualization", "components"]
-compiler = "0.14.2"
-exclude = ["docs/Manual.pdf", "tests/*", "Manual.typ"]
+compiler = "0.14.0"
+exclude = [Manual.typ, "tests/*", "Manual.typ"]
